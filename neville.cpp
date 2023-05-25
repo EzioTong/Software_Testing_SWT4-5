@@ -162,11 +162,15 @@ void loop() {
 
   char displayBuf[50];
   sprintf(displayBuf, "Active Optosensors: %d; %d; %d; %d; %d\n", sensors[0], sensors[1], sensors[2], sensors[3], sensors[4]);
-  Serial.println(displayBuf);
+   //Serial.println(displayBuf);
 
   float output = analogRead(A4);
+
+  Serial.println(output);
+
   int lightpercent = (1023-output)/1023 * 100;
-  if (lightpercent < 30) {
+  Serial.println(lightpercent);
+  if (lightpercent < 50) {
     digitalWrite(20, HIGH);
   } else {
     digitalWrite(20, LOW);
@@ -176,6 +180,10 @@ void loop() {
   int distance = ultrasonic.read();
   Serial.print("Distance(CM): ");
   Serial.println(distance);
+  if (distance < 5) {
+    stopSmooth();
+    delay(2000);
+  }
 
   int maxSensorIdx = 0;
   for (int i = 0; i < 5; i++) {
@@ -188,43 +196,42 @@ void loop() {
   switch (maxSensorIdx) {
     case 0:
         stopSmooth();
-        activateMotor(1, 0.25);
+        activateMotor(1, 0.3);
+        activateMotor(0, -0.15);
+        delay(15);
         stopSmooth();
         break;
     case 1:
-        activateMotor(1, 0.18);
+        activateMotor(1, 0.2);
+        activateMotor(0, -0.1);
         break;
     case 2:
-        activateMotor(0, 0.2);
-        activateMotor(1, 0.2);
+        activateMotor(0, 0.12);
+        activateMotor(1, 0.12);
         break;
     case 3:
-        activateMotor(0, 0.18);
+        activateMotor(0, 0.2);
+        activateMotor(1, -0.1);
         break;
     case 4:
         stopSmooth();
-        activateMotor(0, 0.25);
+        activateMotor(0, 0.3);
+        activateMotor(1, -0.15);
+        delay(15);
         stopSmooth();
         break;
     default:
         break;
   }
 
-  // Off-track, stop!
-  // TODO: change threshold?
-  if (sensors[0] < 20 && sensors[1] < 20 && sensors[2] < 20 && sensors[3] < 20 && sensors[4] < 20) {
-    stopSmooth();
-    return;
-  }
-
   // Meet endpoint, stop!
   // TODO: change threshold?
-  if (sensors[0] > 1000 && sensors[1] > 1000 && sensors[2] > 1000 && sensors[3] > 1000 && sensors[4] > 1000) {
+  int trshd = 0.8 * sensors[maxSensorIdx];
+  if (sensors[1] > trshd && sensors[2] > trshd && sensors[3] > trshd && sensors[0] > trshd && sensors[4] > trshd) {
     stopSmooth();
-    return;
   }
 
   // TODO: change delay based on 'maxSensorIdx'?
-  delay(100);
+  delay(5);
 
 }
